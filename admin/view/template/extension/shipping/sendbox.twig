@@ -1,0 +1,262 @@
+{{ header }}
+{{ column_left }}
+<div id="content">
+	<div class="page-header">
+		<div class="container-fluid">
+			<div class="pull-right">
+				<button type="submit" form="form-pp-std-uk" data-toggle="tooltip" title="{{ button_save }}" class="btn btn-primary"><i class="fa fa-save"></i></button> 
+                <a href="{{ cancel }}" data-toggle="tooltip" title="{{button_cancel}}" class="btn btn-default"><i class="fa fa-reply"></i></a>
+			</div>
+			<h1>
+{{ heading_title }}
+			</h1>
+			<ul class="breadcrumb">
+				{% for breadcrumb in breadcrumbs %} 
+				<li><a href="{{ breadcrumb.href }}">{{ breadcrumb.text }}</a></li>
+				{% endfor %} 
+			</ul>
+		</div>
+	</div>
+	<div class="container-fluid">
+		{% if error_warning %} 
+		<div class="alert alert-danger"><i class="fa fa-exclamation-circle"></i> {{ error_warning }}
+		<button type="button" class="close" data-dismiss="alert">&times;</button>
+		</div>
+		{% endif %}
+		{% if not show_connect_box and not sendbox_url %}
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h3 class="panel-title">
+					<i class="fa fa-pencil"></i> 
+					{{ text_edit }}
+				</h3>
+			</div>
+			<div class="panel-body">
+			{# ADDING APPID AND SECERT PART #}
+			
+			<div id="instructions">
+			 <span><b>To connect to sendbox,copy your webhook url and  register on sendbox
+			 <br/> then go on sendbox to get your app_id and client secret.
+			 copy these details and paste in their respective feilds, click on save and then connect to sendbox
+		     </b> </span> 
+
+    	<div class = "form-group">
+        	<label class="col-sm-2 control-label" for="sendbox_webhook">{{ entry_senbox_webhook }}	</label> 
+            <div class="col-sm-10"> 
+			<input type="text" name="sendbox_webhook"  id="sendbox_webhook" class="form-control" value="{{static_url}}" />
+			</div>
+      	</div>  
+
+		  <br/>
+  <form name="sendbox-id-form"  id="sendbox-id-form" class="form-horizontal" method="POST" action = "{{action}}">
+  <div id="tab-sendbox-details">
+
+					<div class = "sendbox_ids">
+
+
+					<div class = "form-group required">
+                    	<label class="col-sm-2 control-label" for="sendbox_id">{{ entry_app_id }}	</label> 
+                    	<div class="col-sm-10"> 
+						<input type="text" name="app_id"  id="sendbox_app_id" placeholder="sendbox_app_id" value = " " class="form-control" />
+						</div>
+					</div> 
+
+					<div class = "form-group required">
+                    	<label class="col-sm-2 control-label" for="sendbox_secert"> {{entry_client_secret}}	</label> 
+                    	<div class="col-sm-10"> 
+						<input type="text" name="client_secret"  id="sendbox_client_secret" value = " " class="form-control" />
+						</div>
+				     </div>
+                    </div>
+					<div>
+					
+					 <button class="btn btn-primary" type="submit" id="sendbox_id_btn">Save</button>
+ 			</form> 
+			  <br/>
+			 <br/>
+			 {% endif %}
+			 
+			 {% if show_connect_box and sendbox_url and not connected %}
+			 <a class="btn btn-primary sendbox_url" id="sendbox_btn"href ='{{sendbox_url}}'>Connect to Sendbox</a>
+			 {% endif %}
+			</div>
+			{# END OF APPID AND SECERT PART#}
+			{% if show_connect_box and sendbox_url and connected %}
+				<form action="{{ action }}" method="post" enctype="multipart/form-data" id="form-pp-std-uk" class="form-horizontal">
+					
+					
+                    	<div class="col-sm-10" style = "display:none"> 
+						<input type="text" name="app_id"  id="sendbox_username" value = "{{app_id}}" class="form-control" />
+						</div>
+
+					<div class = "form-group required">
+                    	<label class="col-sm-2 control-label" for="sendbox_username">{{ entry_sendbox_username }}	</label> 
+                    	<div class="col-sm-10"> 
+						<input type="text" name="sendbox_username"  id="sendbox_username" value = "{{sendbox_username}}" class="form-control" />
+						</div>
+					</div> 
+
+					<div class = "form-group required">
+                    	<label class="col-sm-2 control-label" for="sendbox_phone"> {{entry_phone}}	</label> 
+                    	<div class="col-sm-10"> 
+						<input type="text" name="sendbox_phone"  id="sendbox_phone" value = "{{sendbox_phone}}" class="form-control" />
+						</div>
+				     </div> 
+
+					 <div class = "form-group required">
+                    	<label class="col-sm-2 control-label" for="sendbox_email"> {{entry_email}}	</label> 
+                    	<div class="col-sm-10"> 
+						<input type="text" name="sendbox_email"  id="sendbox_email" value = "{{sendbox_email}}" class="form-control" />
+						</div>
+				     </div>
+
+					  <div class = "form-group required">
+                    	<label class="col-sm-2 control-label" for="sendbox_store_address"> {{entry_store_address}}</label> 
+                    	<div class="col-sm-10"> 
+						<input type="text" name="sendbox_store_address" value= "{{sendbox_store_address}}" id="sendbox_store_address" class="form-control" />
+						</div>
+				     </div> 
+
+					 <div class = "form-group required">
+                    	<label class="col-sm-2 control-label" for="sendbox_country"> {{entry_country}}	</label> 
+                    	<div class="col-sm-10"> 
+						<input type="text" name="sendbox_country"  id="sendbox_country" value = "{{sendbox_country}}" class="form-control" />
+						</div>
+				     </div> 
+
+
+					{#  <div class = "form-group required">
+					 <label class="col-sm-2 control-label" for="sendbox_state"> {{entry_state}}	</label> 
+                    	<div class="col-sm-10"> 
+						<input type="text" name="sendbox_state"  id="sendbox_state" value = "{{sendbox_state}}" class="form-control" />
+						</div>
+
+					 </div> 
+ #}
+					  <div class = "form-group required">
+					 <label class="col-sm-2 control-label" for="sendbox_city"> {{entry_city}}	</label> 
+                    	<div class="col-sm-10"> 
+						<input type="text" name="sendbox_city_select"  id="sendbox_city" value = "{{sendbox_city}}" class="form-control" />
+						</div>
+
+					 </div>
+ 
+
+					 <div class = "form-group required">
+                    	<label class="col-sm-2 control-label" for="sendbox_state"> {{entry_state}}</label> 
+                    	<div class="col-sm-10"> 
+						<select class="sendbox_state_select form-control" id="sendbox_state" name="sendbox_state_select">  
+						<option value>--Select State--</option> 
+						
+                       {% for s_state in sendbox_state %}
+					   
+										{% if s_state == sendbox_state_select %}
+										<option value="{{ s_state.code }}" selected="selected">{{ s_state.name }}
+										</option>
+										{% else %}
+										<option value="{{ s_state.code }}">{{ s_state.name }}
+										</option>
+										{% endif %}
+										{% endfor %}
+						</select>
+						</div>
+				     </div>   
+
+					  <div class = "form-group required">
+                    	<label class="col-sm-2 control-label" for="sendbox_rates"> {{entry_rates}}</label> 
+                    	<div class="col-sm-10"> 
+						<select class="sendbox_rates_select form-control" id="sendbox_rates" > 
+						{% for s_rates in sendbox_rates %}  
+						{% if s_rates == sendbox_rates_select %}
+						<option value = "{{s_rates}}" selected="selected">{{s_rates}}</option> 
+						{% else %}
+						<option value = "{{s_rates}}">{{s_rates}} </option>
+						{% endif %}
+						{% endfor %}
+						</select>
+						</div>
+				     </div> 
+
+					  <div class = "form-group required">
+                    	<label class="col-sm-2 control-label" for="sendbox_pickup_types"> {{entry_sendbox_pickup_types}}</label> 
+                    	<div class="col-sm-10"> 
+						<select class="sendbox_pickup_types_select form-control" id="sendbox_pickup" name = "sendbox_pickup_types"> {{sendbox_pickup_types}}
+						{% for s_types in sendbox_pickup_types %}  
+						{% if s_types == sendbox_pickup_types %}
+						<option value = "{{s_types}}" selected="selected">{{s_types}}</option> 
+						{% else %}
+						<option value = "{{s_types}}">{{s_types}} </option>
+						{% endif %}
+						{% endfor %}
+						</select>
+						</div>
+				     </div> 
+
+                     <div class = "form-group required">
+                    	<label class="col-sm-2 control-label" for="input-geo-zone"> {{entry_geo_zone}}</label> 
+                    	<div class="col-sm-10"> 
+						<select name="shipping_sendbox_geo_zone_id" id="input-geo-zone" class="form-control">
+										<option value="0">
+										{{ text_all_zones }}
+										</option>
+										{% for geo_zones in geo_zone %}
+										{% if geo_zone.geo_zone_id == sendbox_geo_zone_id %}
+										<option value="{{ geo_zone.geo_zone_id }}" selected="selected">{{ geo_zone.name }}
+										</option>
+										{% else %}
+										<option value="{{ geo_zone.geo_zone_id }}">{{ geo_zone.name }}
+										</option>
+										{% endif %}
+										{% endfor %}
+									</select>
+						</div>
+				     </div>
+
+                      <div class="form-group">
+								<label class="col-sm-2 control-label" for="input-status">{{ entry_status }}
+								</label> 
+								<div class="col-sm-10">
+									<select name="shipping_sendbox_status" id="input-status" class="form-control">
+
+								{% if shipping_sendbox_status %}
+										<option value="1" selected="selected">{{ text_enabled }}
+										</option>
+										<option value="0">{{ text_disabled }}
+										</option>
+								{% else %}
+										<option value="1">{{ text_enabled }}
+										</option>
+										<option value="0" selected="selected">{{ text_disabled }}
+										</option>
+								{% endif %}
+									</select>
+								</div>
+							</div>
+
+							 <div class="form-group">
+            <label class="col-sm-2 control-label" for="input-sort-order">{{ entry_sort_order }}</label>
+            <div class="col-sm-10">
+              <input type="text" name="shipping_sendbox_sort_order" value="{{ sendbox_sort_order }}" placeholder="{{ entry_sort_order }}" id="input-sort-order" class="form-control" />
+            </div>
+
+				</form>
+				{% endif %}
+			</div>
+		</div>
+ <script>
+$(document).ready(function(){
+	//$('button#sendbox_id_btn').on('click submit',function(e){
+		//e.preventDefault();
+		//var sendbox_app_id = $('input#sendbox_app_id').val();
+		//var sendbox_client_secert = $('input#sendbox_client_secret').val();
+		//var adminSettingsUrl = location.href;
+		//var newAdminUrl = adminSettingsUrl+'&app_id='+sendbox_app_id+'&client_secret='+sendbox_client_secert;
+        //window.location.replace(newAdminUrl);
+		//console.log(newAdminUrl);
+
+		//console.log(sendbox_client_secert,sendbox_app_id);
+	});
+
+});
+</script>
+{{footer}}

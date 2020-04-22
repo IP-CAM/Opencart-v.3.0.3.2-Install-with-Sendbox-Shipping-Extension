@@ -1,0 +1,143 @@
+2020-02-11 11:59:19 - MOD: Modification Default
+
+FILE: system/engine/action.php
+REGEX: ~(require|include)(_once)?\(([^)]+)~
+LINE: 69
+
+FILE: system/engine/loader.php
+REGEX: ~(require|include)(_once)?\(([^)]+)~
+LINE: 77
+LINE: 151
+LINE: 168
+
+FILE: system/library/config.php
+REGEX: ~(require|include)(_once)?\(([^)]+)~
+LINE: 59
+
+FILE: system/library/language.php
+REGEX: ~(require|include)(_once)?\(([^)]+)~
+LINE: 67
+LINE: 73
+
+FILE: system/library/template/template.php
+REGEX: ~(require|include)(_once)?\(([^)]+)~
+LINE: 18
+
+FILE: system/library/template/twig.php
+CODE: $loader = new \Twig_Loader_Filesystem(DIR_TEMPLATE);
+LINE: 19
+----------------------------------------------------------------
+MOD: Override Engine 6.5.13
+CODE: public function getId() {
+LINE: 81
+CODE: public function execute
+LINE: 94
+
+FILE: system/engine/controller.php
+CODE: public function __set($key, $value) {
+LINE: 31
+CODE: public function controller
+LINE: 41
+CODE: if (!$this->registry->has('model_' . str_replace('/', '_', $route))) {
+LINE: 80
+CODE: $template = new Template($this->registry->get('config')->get('template_engine'));
+LINE: 144
+CODE: $file = DIR_SYSTEM . 'library/' . $route . '.php';
+LINE: 178
+CODE: protected function callback($registry, $route
+LINE: 250
+CODE: use($registry, $route
+LINE: 251
+CODE: $class = 'Model' . preg_replace('/[^a-zA-Z0-9]/', '', substr($route, 0, strrpos($route, '/')));
+LINE: 265
+CODE: $model[$key] = new $class($registry);
+LINE: 271
+CODE: public $data = array();
+LINE: 18
+CODE: public function __construct($directory = ''
+LINE: 26
+CODE: public function __construct($directory = ''
+LINE: 31
+CODE: $_ = array();
+LINE: 76
+
+FILE: system/library/mail.php
+CODE: public $parameter;
+LINE: 24
+CODE: exit();
+LINE: 63
+CODE: public function send() {
+LINE: 151
+CODE: $this->adaptor->send();
+LINE: 184
+
+FILE: admin/controller/startup/error.php
+CODE: new Log(
+LINE: 3
+
+FILE: admin/controller/startup/login.php
+CODE: new Cart\User(
+LINE: 12
+
+FILE: admin/controller/startup/startup.php
+CODE: new Language(
+LINE: 25
+CODE: new Cart\Customer(
+LINE: 30
+CODE: new Cart\Currency(
+LINE: 33
+CODE: new Cart\Tax(
+LINE: 36
+CODE: new Cart\Weight(
+LINE: 49
+CODE: new Cart\Length(
+LINE: 52
+CODE: new Cart\Cart(
+LINE: 55
+CODE: new Encryption(
+LINE: 58
+CODE: $this->config->get('config_encryption')
+LINE: 58
+CODE: new Openbay(
+LINE: 61
+
+FILE: catalog/controller/startup/error.php
+CODE: new Log(
+LINE: 3
+
+FILE: catalog/controller/startup/maintenance.php
+CODE: new Cart\User(
+LINE: 17
+
+FILE: catalog/controller/startup/startup.php
+CODE: new Url(
+LINE: 38
+CODE: new Language(
+LINE: 102
+CODE: new Cart\Customer(
+LINE: 111
+CODE: new Cart\Currency(
+LINE: 159
+CODE: new Cart\Tax(
+LINE: 162
+CODE: new Cart\Weight(
+LINE: 179
+CODE: new Cart\Length(
+LINE: 182
+CODE: new Cart\Cart(
+LINE: 185
+CODE: new Encryption(
+LINE: 188
+CODE: $this->config->get('config_encryption')
+LINE: 188
+CODE: new Openbay(
+LINE: 191
+
+FILE: admin/controller/common/developer.php
+CODE: $files = glob($directory . '/*');
+LINE: 65
+
+FILE: catalog/controller/event/theme.php
+CODE: if ($template) {
+LINE: 10
+----------------------------------------------------------------

@@ -1,0 +1,450 @@
+<?xml version="1.0" encoding="utf-8"?>
+<modification>
+	<name>Override Engine 6.5.13</name>
+	<code>Override Engine 6.5.13</code>
+	<version>6.5.13</version>
+	<author>mhccorp.com</author>
+	<link>https://www.mhccorp.com</link>
+
+	<file path="system/engine/action.php">
+		<operation>
+			<search><![CDATA[public function getId() {]]></search>
+			<add position="after" offset="2"><![CDATA[
+	protected function override_execute($registry, array $args = array()) {
+		// Stop any magical methods being called
+		if (substr($this->method, 0, 2) == '__') {
+			return new \Exception('Error: Calls to magic methods are not allowed!');
+		}
+
+		if (!$registry->get('factory')) {
+			require_once(DIR_SYSTEM . 'library/override/factory.php');
+			$registry->set('factory',new Factory($registry));
+		}
+		$factory = $registry->get('factory');
+
+		$properties = $factory->actionProperties($this->id);
+		$route = $this->route;
+		$file = isset($properties['file']) ? $properties['file'] : DIR_APPLICATION . 'controller/' . $route . '.php';
+		$class = isset($properties['class']) ? $properties['class'] : $class = 'Controller' . preg_replace('/[^a-zA-Z0-9]/', '', $route);
+		$method = isset($properties['method']) ? $properties['method'] : $this->method;
+
+		if (is_file($file)) {
+			$controller = $factory->newController( $file, $class );
+		} else {
+			return new \Exception('Error: Could not call ' . $route . '/' . $method . '!');
+		}
+
+		$class = get_class($controller);
+		$reflection = new ReflectionClass($class);
+		if ($reflection->hasMethod($method) && $reflection->getMethod($method)->getNumberOfRequiredParameters() <= count($args)) {
+			return call_user_func_array(array($controller, $method), $args);
+		} else {
+			return new \Exception('Error: Could not call ' . $route . '/' . $method . '!');
+		}
+	}
+			]]></add>
+		</operation>
+		<operation>
+			<search><![CDATA[public function execute]]></search>
+			<add position="after"><![CDATA[
+		return $this->override_execute($registry,$args);
+			]]></add>
+		</operation>
+	</file>
+
+	<file path="system/engine/controller.php">
+		<operation>
+			<search><![CDATA[public function __set($key, $value) {]]></search>
+			<add position="after" offset="2"><![CDATA[
+	public function preRender( $template_buffer, $template_name, &$data ) {
+		// This newly introduced hook method can be overridden 
+		// by extended controller classes.
+		// The template buffer or varibales can be modified here.
+		return $template_buffer;
+	}
+			]]></add>
+		</operation>
+	</file>
+
+	<file path="system/engine/loader.php">
+		<operation>
+			<search><![CDATA[public function controller]]></search>
+			<add position="before"><![CDATA[
+	public function __get($key) {
+		return $this->registry->get($key);
+	}
+
+	public function __set($key, $value) {
+		$this->registry->set($key, $value);
+	}
+			]]></add>
+		</operation>
+		<operation>
+			<search><![CDATA[if (!$this->registry->has('model_' . str_replace('/', '_', $route))) {]]></search>
+			<add position="replace"><![CDATA[
+		if ($this->factory) {
+			$instance = $this->factory->newModel($route);
+			$proxy = new Proxy();
+			foreach (get_class_methods($instance) as $method) {
+				$proxy->{$method} = $this->callback($this->registry, $route . '/' . $method, $instance);
+			}
+			$this->registry->set('model_' . str_replace('/', '_', (string)$route), $proxy);
+		} else if (!$this->registry->has('model_' . str_replace('/', '_', $route))) {
+			]]></add>
+		</operation>
+		<operation>
+			<search><![CDATA[$template = new Template($this->registry->get('config')->get('template_engine'));]]></search>
+			<add position="before" offset="1"><![CDATA[
+		} else if ($this->factory) {
+			if (!empty($template)) {
+				$output = $this->factory->loadView( $route, $data, $template );
+			} else {
+				$output = $this->factory->loadView( $route, $data );
+			}
+			]]></add>
+		</operation>
+		<operation>
+			<search><![CDATA[$file = DIR_SYSTEM . 'library/' . $route . '.php';]]></search>
+			<add position="before"><![CDATA[
+		if ($this->factory) {
+			$this->registry->set(basename($route), $this->factory->newLibrary($route,$this->registry) );
+			return;
+		}
+			]]></add>
+		</operation>
+		<operation>
+			<search><![CDATA[protected function callback($registry, $route]]></search>
+			<add position="replace"><![CDATA[protected function callback($registry, $route, $model_instance=null]]></add>
+		</operation>
+		<operation>
+			<search><![CDATA[use($registry, $route]]></search>
+			<add position="replace"><![CDATA[use($registry, $route, $model_instance]]></add>
+		</operation>
+		<operation>
+			<search><![CDATA[$class = 'Model' . preg_replace('/[^a-zA-Z0-9]/', '', substr($route, 0, strrpos($route, '/')));]]></search>
+			<add position="replace"><![CDATA[$class = ($model_instance) ? get_class($model_instance) : 'Model' . preg_replace('/[^a-zA-Z0-9]/', '', substr($route, 0, strrpos($route, '/')));]]></add>
+		</operation>
+		<operation>
+			<search><![CDATA[$model[$key] = new $class($registry);]]></search>
+			<add position="replace"><![CDATA[$model[$key] = ($model_instance) ? $model_instance : new $class($registry);]]></add>
+		</operation>
+	</file>
+
+	<file path="system/library/language.php">
+		<operation>
+			<search><![CDATA[public $data = array();]]></search>
+			<add position="after"><![CDATA[
+	private static $factory = null;
+			]]></add>
+		</operation>
+		<operation>
+			<search><![CDATA[public function __construct($directory = '']]></search>
+			<add position="replace"><![CDATA[public function __construct($directory = '', $factory = null]]></add>
+		</operation>
+		<operation>
+			<search><![CDATA[public function __construct($directory = '']]></search>
+			<add position="after"><![CDATA[
+		if (self::$factory==null) {
+			self::$factory = $factory;
+		}
+			]]></add>
+		</operation>
+
+		<operation>
+			<search><![CDATA[$_ = array();]]></search>
+			<add position="before"><![CDATA[
+			if (self::$factory) {
+				$_ = self::$factory->loadLanguage($filename, $this->default, $this->directory);
+				$this->data = array_merge( $this->data, $_ );
+				return $this->data;
+			}
+			]]></add>
+		</operation>
+	</file>
+
+	<file path="system/library/mail.php">
+		<operation>
+			<search><![CDATA[public $parameter;]]></search>
+			<add position="after"><![CDATA[
+	protected static $event = null;
+			]]></add>
+		</operation>
+		<operation>
+			<search><![CDATA[exit();]]></search>
+			<add position="after" offset="1"><![CDATA[
+		// find the OpenCart Event object from calling class if not yet set here
+		if (self::$event==null) {
+			$object = null;
+			$backtrace = debug_backtrace();
+			if (!empty($backtrace[1]['class'])) {
+				$class = $backtrace[1]['class'];
+				if (substr($class,0,strlen('Controller'))=='Controller') {
+					if (!empty($backtrace[1]['object'])) {
+						$object = $backtrace[1]['object'];
+					}
+				} else if (substr($class,0,strlen('Model'))=='Model') {
+					if (!empty($backtrace[1]['object'])) {
+						$object = $backtrace[1]['object'];
+					}
+				}
+			}
+			if ($object) {
+				if ($object->event) {
+					self::$event = $object->event;
+				}
+			}
+		}
+			]]></add>
+		</operation>
+		<operation>
+			<search><![CDATA[public function send() {]]></search>
+			<add position="after"><![CDATA[
+		// if on catalog frontend then trigger a before-event
+		if (!defined('DIR_CATALOG')) { 
+			if (self::$event) {
+				self::$event->trigger( 'system/mail/send/before', array(&$this) );
+			}
+		}
+			]]></add>
+		</operation>
+		<operation>
+			<search><![CDATA[$this->adaptor->send();]]></search>
+			<add position="before"><![CDATA[
+		// if on catalog frontend then trigger an after-event
+		if (!defined('DIR_CATALOG')) { 
+			if (self::$event) {
+				self::$event->trigger( 'system/mail/send/after', array(&$this) );
+			}
+		}
+			]]></add>
+		</operation>
+	</file>
+
+	<!--
+	<file path="system/framework.php">
+		<operation>
+			<search><![CDATA[$registry = new Registry();]]></search>
+			<add position="after"><![CDATA[
+// Factory
+$factory = new Factory($registry);
+$registry->set( 'factory', $factory );
+			]]></add>
+		</operation>
+		<operation>
+			<search><![CDATA[new Log(]]></search>
+			<add position="replace"><![CDATA[$this->factory->newLog(]]></add>
+		</operation>
+		<operation>
+			<search><![CDATA[new Event(]]></search>
+			<add position="replace"><![CDATA[$factory->newMediator(]]></add>
+		</operation>
+		<operation>
+			<search><![CDATA[new Action($action]]></search>
+			<add position="replace"><![CDATA[new Action($action,$factory]]></add>
+		</operation>
+		<operation>
+			<search><![CDATA[new Request(]]></search>
+			<add position="replace"><![CDATA[$factory->newRequest(]]></add>
+		</operation>
+		<operation>
+			<search><![CDATA[new Response(]]></search>
+			<add position="replace"><![CDATA[$factory->newResponse(]]></add>
+		</operation>
+		<operation>
+			<search><![CDATA[new DB(]]></search>
+			<add position="replace"><![CDATA[$factory->newDB(]]></add>
+		</operation>
+		<operation>
+			<search><![CDATA[new Session(]]></search>
+			<add position="replace"><![CDATA[$factory->newSession(]]></add>
+		</operation>
+		<operation>
+			<search><![CDATA[new Cache(]]></search>
+			<add position="replace"><![CDATA[$factory->newCache(]]></add>
+		</operation>
+		<operation>
+			<search><![CDATA[new Url(]]></search>
+			<add position="replace"><![CDATA[$factory->newUrl(]]></add>
+		</operation>
+		<operation>
+			<search><![CDATA[new Language(]]></search>
+			<add position="replace"><![CDATA[$factory->newLanguage(]]></add>
+		</operation>
+		<operation>
+			<search><![CDATA[new Openbay(]]></search>
+			<add position="replace"><![CDATA[$factory->newOpenbay(]]></add>
+		</operation>
+		<operation>
+			<search><![CDATA[new Document(]]></search>
+			<add position="replace"><![CDATA[$factory->newDocument(]]></add>
+		</operation>
+		<operation>
+			<search><![CDATA[new Action($value]]></search>
+			<add position="replace"><![CDATA[new Action($value,$factory]]></add>
+		</operation>
+		<operation>
+			<search><![CDATA[new Action($config->get('action_router')]]></search>
+			<add position="replace"><![CDATA[new Action($config->get('action_router'),$factory]]></add>
+		</operation>
+		<operation>
+			<search><![CDATA[new Action($config->get('action_error')]]></search>
+			<add position="replace"><![CDATA[new Action($config->get('action_error'),$factory]]></add>
+		</operation>
+		<operation>
+			<search><![CDATA[]]></search>
+			<add position="replace"><![CDATA[]]></add>
+		</operation>
+	</file>
+
+	<file path="system/startup.php">
+		<operation>
+			<search><![CDATA[require_once(modification(DIR_SYSTEM . 'engine/proxy.php'));]]></search>
+			<add position="after"><![CDATA[
+require_once(DIR_SYSTEM . 'library/override/factory.php');
+			]]></add>
+		</operation>
+	</file>
+	-->
+
+	<file path="admin/controller/startup/error.php">
+		<operation>
+			<search><![CDATA[new Log(]]></search>
+			<add position="replace"><![CDATA[$this->factory->newLog(]]></add>
+		</operation>
+	</file>
+
+	<file path="admin/controller/startup/login.php">
+		<operation>
+			<search><![CDATA[new Cart\User(]]></search>
+			<add position="replace"><![CDATA[$this->factory->newCart_User(]]></add>
+		</operation>
+	</file>
+
+	<file path="admin/controller/startup/startup.php">
+		<operation>
+			<search><![CDATA[new Language(]]></search>
+			<add position="replace"><![CDATA[$this->factory->newLanguage(]]></add>
+		</operation>
+		<operation>
+			<search><![CDATA[new Cart\Customer(]]></search>
+			<add position="replace"><![CDATA[$this->factory->newCart_Customer(]]></add>
+		</operation>
+		<operation>
+			<search><![CDATA[new Cart\Currency(]]></search>
+			<add position="replace"><![CDATA[$this->factory->newCart_Currency(]]></add>
+		</operation>
+		<operation>
+			<search><![CDATA[new Cart\Tax(]]></search>
+			<add position="replace"><![CDATA[$this->factory->newCart_Tax(]]></add>
+		</operation>
+		<operation>
+			<search><![CDATA[new Cart\Weight(]]></search>
+			<add position="replace"><![CDATA[$this->factory->newCart_Weight(]]></add>
+		</operation>
+		<operation>
+			<search><![CDATA[new Cart\Length(]]></search>
+			<add position="replace"><![CDATA[$this->factory->newCart_Length(]]></add>
+		</operation>
+		<operation>
+			<search><![CDATA[new Cart\Cart(]]></search>
+			<add position="replace"><![CDATA[$this->factory->newCart_Cart(]]></add>
+		</operation>
+		<operation>
+			<search><![CDATA[new Encryption(]]></search>
+			<add position="replace"><![CDATA[$this->factory->newEncryption(]]></add>
+		</operation>
+		<operation error="skip">
+			<search><![CDATA[$this->config->get('config_encryption')]]></search>
+			<add position="replace"><![CDATA[]]></add>
+		</operation>
+		<operation>
+			<search><![CDATA[new Openbay(]]></search>
+			<add position="replace"><![CDATA[$this->factory->newOpenbay(]]></add>
+		</operation>
+	</file>
+
+	<file path="catalog/controller/startup/error.php">
+		<operation>
+			<search><![CDATA[new Log(]]></search>
+			<add position="replace"><![CDATA[$this->factory->newLog(]]></add>
+		</operation>
+	</file>
+
+	<file path="catalog/controller/startup/maintenance.php">
+		<operation>
+			<search><![CDATA[new Cart\User(]]></search>
+			<add position="replace"><![CDATA[$this->factory->newCart_User(]]></add>
+		</operation>
+	</file>
+
+	<file path="catalog/controller/startup/startup.php">
+		<operation>
+			<search><![CDATA[new Url(]]></search>
+			<add position="replace"><![CDATA[$this->factory->newUrl(]]></add>
+		</operation>
+		<operation>
+			<search><![CDATA[new Language(]]></search>
+			<add position="replace"><![CDATA[$this->factory->newLanguage(]]></add>
+		</operation>
+		<operation>
+			<search><![CDATA[new Cart\Customer(]]></search>
+			<add position="replace"><![CDATA[$this->factory->newCart_Customer(]]></add>
+		</operation>
+		<operation>
+			<search><![CDATA[new Cart\Currency(]]></search>
+			<add position="replace"><![CDATA[$this->factory->newCart_Currency(]]></add>
+		</operation>
+		<operation>
+			<search><![CDATA[new Cart\Tax(]]></search>
+			<add position="replace"><![CDATA[$this->factory->newCart_Tax(]]></add>
+		</operation>
+		<operation>
+			<search><![CDATA[new Cart\Weight(]]></search>
+			<add position="replace"><![CDATA[$this->factory->newCart_Weight(]]></add>
+		</operation>
+		<operation>
+			<search><![CDATA[new Cart\Length(]]></search>
+			<add position="replace"><![CDATA[$this->factory->newCart_Length(]]></add>
+		</operation>
+		<operation>
+			<search><![CDATA[new Cart\Cart(]]></search>
+			<add position="replace"><![CDATA[$this->factory->newCart_Cart(]]></add>
+		</operation>
+		<operation>
+			<search><![CDATA[new Encryption(]]></search>
+			<add position="replace"><![CDATA[$this->factory->newEncryption(]]></add>
+		</operation>
+		<operation error="skip">
+			<search><![CDATA[$this->config->get('config_encryption')]]></search>
+			<add position="replace"><![CDATA[]]></add>
+		</operation>
+		<operation>
+			<search><![CDATA[new Openbay(]]></search>
+			<add position="replace"><![CDATA[$this->factory->newOpenbay(]]></add>
+		</operation>
+	</file>
+
+	<file path="admin/controller/common/developer.php">
+		<operation error="skip">
+			<search><![CDATA[$files = glob($directory . '/*');]]></search>
+			<add position="before"><![CDATA[
+					if ($directory==DIR_CACHE.'override') {
+						continue;
+					}
+			]]></add>
+		</operation>
+	</file>
+
+	<file path="catalog/controller/event/theme.php">
+		<operation error="skip">
+			<search><![CDATA[if ($template) {]]></search>
+			<add position="after"><![CDATA[
+			if ($this->factory) {
+				// we render later via a Factory::loadView call from the Loader::view method
+				return null;
+			}
+			]]></add>
+		</operation>
+	</file>
+
+</modification>
